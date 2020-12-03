@@ -29,11 +29,8 @@ prepareMap ls = array ((0, 0), (length ls - 1, length (head ls) - 1)) $ do
   return ((i, j), if e == '#' then 1 else 0)
 
 countCollisions :: Array (Int, Int) Int -> (Int, Int) -> Int
-countCollisions mapData (sx, sy) = countCollisions' 0 0 0
-  where
-    (_, (maxY, maxX)) = bounds mapData
-    countCollisions' x y acc =
-      let (x', y') = (x + sx, y + sy)
-      in if y' > maxY
-        then acc
-        else countCollisions' x' y' (acc + mapData!(y', x' `mod` (maxX+1)))
+countCollisions mapData (sx, sy) =
+  let
+    (_, (yMax, xMax)) = bounds mapData
+    steps = (0, 0) : map (\(y, x) -> (y+sy, (x+sx) `mod` (xMax+1))) steps
+  in sum $ map (mapData !) $ takeWhile ((<= yMax) . fst) steps
