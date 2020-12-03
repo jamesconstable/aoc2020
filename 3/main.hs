@@ -1,3 +1,4 @@
+import Data.Array ((!), Array, array, bounds)
 import System.Environment (getArgs)
 
 {-
@@ -18,17 +19,21 @@ main = do
 
 solve :: [(Int, Int)] -> IO ()
 solve slopes = do
-  mapData <- lines <$> getContents
+  mapData <- prepareMap . lines <$> getContents
   putStrLn $ show $ product $ map (countCollisions mapData) slopes
 
-countCollisions :: [[Char]] -> (Int, Int) -> Int
+prepareMap :: [[Char]] -> Array (Int, Int) Int
+prepareMap ls = array ((0, 0), (length ls - 1, length (head ls) - 1)) $ do
+  (i, r) <- zip [0..] ls
+  (j, e) <- zip [0..] r
+  return ((i, j), if e == '#' then 1 else 0)
+
+countCollisions :: Array (Int, Int) Int -> (Int, Int) -> Int
 countCollisions mapData (sx, sy) = countCollisions' 0 0 0
   where
-    width = length (head mapData)
+    (_, (maxY, maxX)) = bounds mapData
     countCollisions' x y acc =
-      let
-        (x', y') = (x + sx, y + sy)
-        collision = (mapData !! y') !! (x' `mod` width) == '#'
-      in if y' >= length mapData
+      let (x', y') = (x + sx, y + sy)
+      in if y' > maxY
         then acc
-        else countCollisions' x' y' (acc + if collision then 1 else 0)
+        else countCollisions' x' y' (acc + mapData!(y', x' `mod` (maxX+1)))
