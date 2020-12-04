@@ -1,5 +1,5 @@
 import Data.Char (isDigit)
-import Data.Map (findWithDefault, fromList, member, size)
+import Data.Map (Map, (!), fromList, member)
 import System.Environment (getArgs)
 import Text.Read (readMaybe)
 
@@ -11,8 +11,6 @@ import Text.Read (readMaybe)
    input from stdin, and prints solution to stdout.
 -}
 
-data Field = Field { key :: String, value :: String }
-
 main :: IO ()
 main = do
   let run = (>>= putStrLn) . (<$> getContents) . (show .)
@@ -23,9 +21,9 @@ main = do
     otherwise -> putStrLn "Valid options are 1 or 2"
 
 solve :: Bool -> String -> Int
-solve validateFields =
+solve isPart2 =
   let
-    requiredFields = fromList [
+    requiredFields = [
       ("byr", validateInt 4 1920 2002),
       ("iyr", validateInt 4 2010 2020),
       ("eyr", validateInt 4 2020 2030),
@@ -33,12 +31,9 @@ solve validateFields =
       ("hcl", validateHair),
       ("ecl", (`elem` ["amb", "blu", "brn", "gry", "grn", "hzl", "oth"])),
       ("pid", validateInt 9 minBound maxBound)]
-    isValid (Field k v) = findWithDefault (const False) k requiredFields v
-    filterByFields fn = filter ((== size requiredFields) . length . filter fn)
-  in length
-    . (if validateFields then filterByFields isValid else id)
-    . filterByFields ((`member` requiredFields) . key)
-    . parseInput
+    removeMissing = filter $ \p -> all (`member` p) (map fst requiredFields)
+    removeInvalid = filter $ \p -> all (\(k, fn) -> fn (p!k)) requiredFields
+  in length . (if isPart2 then removeInvalid else id) . removeMissing . parse
 
 inRange :: Ord a => a -> a -> a -> Bool
 inRange min max v = min <= v && v <= max
@@ -61,11 +56,11 @@ validateHair v =
   then all (`elem` "0123456789abcdef") (tail v)
   else False
 
-parseInput :: String -> [[Field]]
-parseInput input = parse [] (words <$> lines input)
+parse :: String -> [Map String String]
+parse input = parse' [] (words <$> lines input)
   where
-    toFields = map ((\(k, ':':v) -> Field k v) . break (== ':'))
-    parse acc ts = case ts of
-      []            -> [acc]
-      ([]:rest)     -> acc : parse [] rest
-      (fields:rest) -> parse (toFields fields ++ acc) rest
+    toPairs = map ((\(k, ':':v) -> (k, v)) . break (== ':'))
+    parse' acc ts = case ts of
+      []            -> [fromList acc]
+      ([]:rest)     -> fromList acc : parse' [] rest
+      (fields:rest) -> parse' (toPairs fields ++ acc) rest
