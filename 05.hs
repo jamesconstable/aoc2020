@@ -1,6 +1,5 @@
 import Data.List (sort)
 import Data.Maybe (fromJust)
-import Numeric (readInt)
 
 import Runner (runner)
 
@@ -26,4 +25,4 @@ parseSeatIds :: String -> [Int]
 parseSeatIds = map toSeatId . lines
 
 toSeatId :: String -> Int
-toSeatId = fst . head . readInt 2 (`elem` "FBLR") (fromEnum . (`elem` "BR"))
+toSeatId = foldl (\x y -> x*2 + fromEnum (y `elem` "BR")) 0
