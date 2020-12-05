@@ -23,7 +23,7 @@ solve isPart2 =
       ("hcl", validateHair),
       ("ecl", (`elem` ["amb", "blu", "brn", "gry", "grn", "hzl", "oth"])),
       ("pid", validateInt 9 minBound maxBound)]
-    removeMissing = filter $ \p -> all (`member` p) (map fst requiredFields)
+    removeMissing = filter $ \p -> all ((`member` p) . fst) requiredFields
     removeInvalid = filter $ \p -> all (\(k, fn) -> fn (p!k)) requiredFields
   in length . (if isPart2 then removeInvalid else id) . removeMissing . parse
 
@@ -40,13 +40,11 @@ validateHeight v =
   in case (readMaybe digits, unit) of
     (Just n, "cm") -> inRange 150 193 n
     (Just n, "in") -> inRange 59 76 n
-    otherwise      -> False
+    _              -> False
 
 validateHair :: String -> Bool
 validateHair v =
-  if length v == 7 && head v == '#'
-  then all (`elem` "0123456789abcdef") (tail v)
-  else False
+  length v == 7 && head v == '#' && all (`elem` "0123456789abcdef") (tail v)
 
 parse :: String -> [Map String String]
 parse input = parse' [] (words <$> lines input)
