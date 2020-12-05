@@ -1,24 +1,16 @@
 import Data.Char (isDigit)
 import Data.Map (Map, (!), fromList, member)
-import System.Environment (getArgs)
 import Text.Read (readMaybe)
 
-{-
-   Solver for Day 4 of the Advent of Code 2020
-   Problem description here: https://adventofcode.com/2020/day/4
+import Runner (runner)
 
-   Takes a command line argument indicating which part to solve (1 or 2), reads
-   input from stdin, and prints solution to stdout.
+{-|
+   Solver for Day 4 of the Advent of Code 2020
+   Problem description: https://adventofcode.com/2020/day/4
 -}
 
 main :: IO ()
-main = do
-  let run = (>>= putStrLn) . (<$> getContents) . (show .)
-  part <- getArgs
-  case part of
-    ["1"]     -> run $ solve False
-    ["2"]     -> run $ solve True
-    otherwise -> putStrLn "Valid options are 1 or 2"
+main = runner (solve False) (solve True)
 
 solve :: Bool -> String -> Int
 solve isPart2 =

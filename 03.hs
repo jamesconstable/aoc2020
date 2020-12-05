@@ -1,22 +1,16 @@
 import Data.Array ((!), Array, array, bounds)
-import System.Environment (getArgs)
 
-{-
+import Runner (runner)
+
+{-|
    Solver for Day 3 of the Advent of Code 2020
-   Problem description here: https://adventofcode.com/2020/day/3
-
-   Takes a command line argument indicating which part to solve (1 or 2), reads
-   input from stdin, and prints solution to stdout.
+   Problem description: https://adventofcode.com/2020/day/3
 -}
 
 main :: IO ()
-main = do
-  let run = (>>= putStrLn) . (<$> getContents) . (show .)
-  part <- getArgs
-  case part of
-    ["1"]     -> run $ solve [(3, 1)]
-    ["2"]     -> run $ solve [(1, 1), (3, 1), (5, 1), (7, 1), (1, 2)]
-    otherwise -> putStrLn "Valid options are 1 or 2"
+main = runner
+  (solve [(3, 1)])
+  (solve [(1, 1), (3, 1), (5, 1), (7, 1), (1, 2)])
 
 solve :: [(Int, Int)] -> [Char] -> Int
 solve slopes input =

@@ -1,23 +1,14 @@
-import System.Environment (getArgs)
+import Runner (runner)
 
-{-
+{-|
    Solver for Day 2 of the Advent of Code 2020
-   Problem description here: https://adventofcode.com/2020/day/2
-
-   Takes a command line argument indicating which part to solve (1 or 2), reads
-   input from stdin, and prints solution to stdout.
+   Problem description: https://adventofcode.com/2020/day/2
 -}
 
 data Password = Password Int Int Char String
 
 main :: IO ()
-main = do
-  let run = (>>= putStrLn) . (<$> getContents) . (show .)
-  part <- getArgs
-  case part of
-    ["1"]     -> run $ solve isValid1
-    ["2"]     -> run $ solve isValid2
-    otherwise -> putStrLn "Valid options are 1 or 2"
+main = runner (solve isValid1) (solve isValid2)
 
 solve :: (Password -> Bool) -> [Char] -> Int
 solve isValid input =
