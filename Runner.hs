@@ -9,9 +9,9 @@ import System.Environment (getArgs)
 -}
 runner :: Show a => (String -> a) -> (String -> a) -> IO ()
 runner part1 part2 = do
-  let run = (>>= putStrLn) . (<$> getContents) . (show .)
+  let run fn = getContents >>= print . fn
   part <- getArgs
   case part of
-    ["1"]     -> run part1
-    ["2"]     -> run part2
-    otherwise -> putStrLn "Valid options are 1 or 2"
+    ["1"] -> run part1
+    ["2"] -> run part2
+    _     -> putStrLn "Valid options are 1 or 2"
