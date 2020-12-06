@@ -17,12 +17,12 @@ maxId = maximum . parseSeatIds
 missingId :: String -> Int
 missingId = fromJust . findGap . sort . parseSeatIds
 
-findGap :: [Int] -> Maybe Int
-findGap (x1:x2:xs) = if x2 - x1 > 1 then Just (x1+1) else findGap (x2:xs)
+findGap :: (Enum a, Eq a) => [a] -> Maybe a
+findGap (x1:x2:xs) = if succ x1 /= x2 then Just (succ x1) else findGap (x2:xs)
 findGap _          = Nothing
 
 parseSeatIds :: String -> [Int]
 parseSeatIds = map toSeatId . lines
 
-toSeatId :: String -> Int
+toSeatId :: Foldable f => f Char -> Int
 toSeatId = foldl (\x y -> x*2 + fromEnum (y `elem` "BR")) 0
