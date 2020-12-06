@@ -1,5 +1,5 @@
-import Data.Foldable (foldl1)
-import Data.Set (Set, fromList, intersection, size, union)
+import Data.List (foldl1')
+import Data.Set (Set, fromList, intersection, union)
 
 import Runner (runner)
 
@@ -12,11 +12,8 @@ main :: IO ()
 main = runner (solveWith union) (solveWith intersection)
 
 solveWith :: (Set Char -> Set Char -> Set Char) -> String -> Int
-solveWith fn = sum . map size . groupAnswers fn [] . lines
-
-groupAnswers :: Ord a
-             => (Set a -> Set a -> Set a) -> [Set a] -> [[a]] -> [Set a]
-groupAnswers fn acc xs = case xs of
-  []      -> [foldl1 fn acc]
-  ([]:xs) -> foldl1 fn acc : groupAnswers fn [] xs
-  (x:xs)  -> groupAnswers fn (fromList x : acc) xs
+solveWith fn = sum . map length . groupAnswers fn [] . lines
+  where
+    groupAnswers fn acc []      = [foldl1' fn acc]
+    groupAnswers fn acc ([]:xs) = foldl1' fn acc : groupAnswers fn [] xs
+    groupAnswers fn acc (x:xs)  = groupAnswers fn (fromList x : acc) xs
