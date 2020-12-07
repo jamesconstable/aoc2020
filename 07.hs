@@ -1,6 +1,7 @@
-import Data.Foldable (fold)
-import Data.List (concatMap, groupBy, nub, sort)
-import Data.Map (Map, (!?), fromList)
+import Data.List (foldl')
+
+import qualified Data.Map as M
+import qualified Data.Set as S
 
 import Runner (runner)
 
@@ -10,27 +11,30 @@ import Runner (runner)
 -}
 
 main :: IO ()
-main = runner solve solve
+main = runner solve1 solve2
 
-solve :: String -> Int
-solve input =
+solve1 :: String -> Int
+solve1 input =
   let
-    rules = parseLine <$> lines input
-    containeeAssocs = do
-      (container, containees) <- rules
-      (containee, _) <- containees
-      return (containee, container)
-    grouped = map (\kvs -> (fst (head kvs), map snd kvs))
-      $ groupBy (\x y -> fst x == fst y) $ sort containeeAssocs
-    reverseRulesMap = fromList grouped
-  in length $ reachableFrom "shiny gold" reverseRulesMap
+    assocs = do
+      (outer, inners) <- parseLine <$> lines input
+      (inner, _)      <- inners
+      return (inner, outer)
+    prependValue m (k, v) = M.insertWith (++) k [v] m
+    rules = foldl' prependValue M.empty assocs
+  in length $ reachableFrom "shiny gold" rules
 
-reachableFrom :: String -> Map String [String] -> [String]
-reachableFrom s m = nub $ reachableFrom' s
-  where
-    reachableFrom' k =
-      let vs = fold (m !? k)
-      in vs ++ concatMap reachableFrom' vs
+solve2 :: String -> Int
+solve2 = countContents "shiny gold" . M.fromList . map parseLine . lines
+
+reachableFrom :: String -> M.Map String [String] -> S.Set String
+reachableFrom k m =
+  let vs = M.findWithDefault [] k m
+  in S.unions (S.fromList vs : map (`reachableFrom` m) vs)
+
+countContents :: String -> M.Map String [(String, Int)] -> Int
+countContents k m =
+  sum $ map (\(c, n) -> n * (1 + countContents c m)) $ M.findWithDefault [] k m
 
 parseLine :: String -> (String, [(String, Int)])
 parseLine s =
