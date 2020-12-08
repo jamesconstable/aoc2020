@@ -1,5 +1,7 @@
+import Data.Map (Map, (!?), assocs, fromList, insert)
 import Data.Maybe (fromJust)
-import qualified Data.Map as M
+
+import qualified Data.Set as S
 
 import Runner (runner)
 
@@ -12,7 +14,7 @@ data Op = Nop Int | Acc Int | Jmp Int | End
 
 data LoopBehaviour = Error | Return deriving Eq
 
-type Program = M.Map Int Op
+type Program = Map Int Op
 
 main :: IO ()
 main = runner solve1 solve2
@@ -25,13 +27,11 @@ solve2 = fromJust . head . filter (/= Nothing) . map (run Error) .
   generatePossibleFixes . parseProgram
 
 run :: LoopBehaviour -> Program -> Maybe Int
-run loop program = run' (M.fromList $ zip (M.keys program) (repeat False)) 0 0
+run loop program = run' S.empty 0 0
   where
     run' visited line acc =
-      let
-        continue = run' (M.insert line True visited)
-        inLoop = M.findWithDefault False line visited
-      in case (inLoop, M.lookup line program) of
+      let continue = run' (S.insert line visited)
+      in case (S.member line visited, program !? line) of
         (True, _)         -> if loop == Return then Just acc else Nothing
         (_, Nothing)      -> Nothing       -- Invalid line number
         (_, Just End)     -> Just acc      -- Successful exit
@@ -40,16 +40,16 @@ run loop program = run' (M.fromList $ zip (M.keys program) (repeat False)) 0 0
         (_, Just (Jmp x)) -> continue (line + x) acc
 
 generatePossibleFixes :: Program -> [Program]
-generatePossibleFixes program = generate' $ M.assocs program
+generatePossibleFixes program = generate' $ assocs program
   where
     generate' p = case p of
       []            -> []
-      (n, Nop x):ls -> M.insert n (Jmp x) program : generate' ls
-      (n, Jmp x):ls -> M.insert n (Nop x) program : generate' ls
+      (n, Nop x):ls -> insert n (Jmp x) program : generate' ls
+      (n, Jmp x):ls -> insert n (Nop x) program : generate' ls
       _:ls          -> generate' ls
 
 parseProgram :: String -> Program
-parseProgram = M.fromList . zip [0..] . (++ [End]) . map parseLine . lines
+parseProgram = fromList . zip [0..] . (++ [End]) . map parseLine . lines
   where
     parseInt (s:n) = (if s == '+' then 1 else -1) * read n
     parseLine l = case words l of
