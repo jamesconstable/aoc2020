@@ -1,4 +1,5 @@
 import Data.List (sort, tails)
+import Data.Maybe (fromJust)
 
 import Runner (runner)
 
@@ -16,7 +17,7 @@ solve1 input =
   in length (filter (== 1) diffs) * length (filter (== 3) diffs)
 
 solve2 :: String -> Int
-solve2 = countCompositions . joltageDiffs
+solve2 = fromJust . countCompositions . joltageDiffs
 
 joltageDiffs :: String -> [Int]
 joltageDiffs input =
@@ -25,12 +26,14 @@ joltageDiffs input =
     joltages = [0] <> adapters <> [last adapters + 3]
   in zipWith (-) (tail joltages) joltages
 
-countCompositions :: [Int] -> Int
+countCompositions :: [Int] -> Maybe Int
 countCompositions ds = case ds of
-  []  -> 1
+  []  -> Just 1
+  1:_ -> let (ones, t) = break (/= 1) ds
+         in (tribonacci !! sum ones *) <$> countCompositions t
   3:t -> countCompositions t
-  _   -> let (ones, rest) = break (/= 1) ds
-         in (tribonacci !! sum ones) * countCompositions rest
+  _   -> Nothing    -- This solution fails if there are any 2s in the list, but
+                    -- we know from Part 1 that this isn't the case.
 
 tribonacci :: [Int]
 tribonacci = 1 : 1 : 2 : map (sum . take 3) (tails tribonacci)
