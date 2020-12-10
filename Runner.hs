@@ -7,7 +7,7 @@ import System.Environment (getArgs)
    Expects a single command line argument indicating which part to run (1 or 2),
    reads input from stdin, and writes result to stdout.
 -}
-runner :: Show a => (String -> a) -> (String -> a) -> IO ()
+runner :: (Show a, Show b) => (String -> a) -> (String -> b) -> IO ()
 runner part1 part2 = do
   let run fn = getContents >>= print . fn
   part <- getArgs
