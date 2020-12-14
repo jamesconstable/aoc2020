@@ -22,7 +22,7 @@ solve2 :: String -> Integer
 solve2 input =
   let
     (_, buses) = parseInput input
-    getOffset (i, bus) = bus >>= \b -> Just (b-i, b)
+    getOffset (i, bus) = fmap (\b -> (b-i, b)) bus
     busOffsets = mapMaybe getOffset $ zip [0..] buses
   in fst $ chineseRemainder busOffsets
 
