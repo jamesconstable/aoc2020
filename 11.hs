@@ -1,6 +1,6 @@
 import Data.Array (Array, (!), array, bounds, elems, indices, listArray)
 import Data.Ix (Ix, inRange)
-import Data.Maybe (fromJust, listToMaybe)
+import Data.Maybe (isJust, fromJust, listToMaybe)
 
 import Runner (runner)
 
@@ -16,20 +16,17 @@ main = runner (solve False) (solve True)
 
 solve :: Bool -> String -> Int
 solve isPart2 = length . filter (== '#') . elems
-  . iterateUntilStable (updateSeating isPart2) . parseSeating
+  . fixpoint (updateSeating isPart2) . parseSeating
 
 parseSeating :: String -> Seating
 parseSeating input =
-  let
-    input' = lines input
-    height = length input'
-    width  = length (head input')
-  in listArray ((0, 0), (height-1, width-1)) $ concat input'
+  let l = lines input
+  in listArray ((0, 0), (length l - 1, length (head l) - 1)) $ concat l
 
-iterateUntilStable :: Eq a => (a -> a) -> a -> a
-iterateUntilStable fn i =
+fixpoint :: Eq a => (a -> a) -> a -> a
+fixpoint fn i =
   let i' = fn i
-  in if i' == i then i' else iterateUntilStable fn i'
+  in if i' == i then i' else fixpoint fn i'
 
 updateSeating :: Bool -> Seating -> Seating
 updateSeating isPart2 s =
@@ -45,7 +42,7 @@ firstVisible :: Seating -> (Int, Int) -> (Int, Int) -> Maybe Char
 firstVisible seating viewer direction = listToMaybe
   $ dropWhile (== '.')
   $ map fromJust
-  $ takeWhile (/= Nothing)
+  $ takeWhile isJust
   $ map (seating !?)
   $ tail
   $ iterate (addTuple direction) viewer
