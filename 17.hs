@@ -1,4 +1,4 @@
-import Control.Monad (guard, replicateM)
+import Control.Monad (replicateM)
 import Data.Map.Strict (Map, elems, empty, insert, findWithDefault, fromList)
 import Data.List (foldl')
 
