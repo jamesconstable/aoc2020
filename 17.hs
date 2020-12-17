@@ -1,9 +1,8 @@
 import Control.Monad (guard, replicateM)
-import Data.Char (digitToInt, intToDigit, isDigit)
-import Data.Map.Strict (Map, (!), assocs, elems, empty, insert, keys, findWithDefault, fromList)
-import Data.List (isPrefixOf, foldl')
-import Data.Maybe (fromJust, listToMaybe)
-import Numeric (readInt, showIntAtBase)
+import Data.Map.Strict (Map, elems, empty, insert, findWithDefault, fromList)
+import Data.List (foldl')
+
+import qualified Data.Ix as I
 
 import Runner (runner)
 
@@ -13,48 +12,60 @@ import Runner (runner)
 -}
 
 type Coord = [Int]
+
 type Grid = Map Coord Char
+
+data State = State {
+  bounds :: (Coord, Coord),
+  grid   :: Grid
+}
 
 main :: IO ()
 main = runner solve1 solve2
 
 solve1 :: String -> Int
-solve1 input =
-  let
-    grid = initGrid 3 input
-    finalGrid = iterate (conwayStep 3) grid !! 6
-  in length $ filter (== '#') $ elems finalGrid
+solve1 = countActive . (!! 6) . iterate conwayStep . readState 3
 
 solve2 :: String -> Int
-solve2 input =
-  let
-    grid = initGrid 4 input
-    finalGrid = iterate (conwayStep 4) grid !! 6
-  in length $ filter (== '#') $ elems finalGrid
+solve2 = countActive . (!! 6) . iterate conwayStep . readState 4
 
-conwayStep :: Int -> Grid -> Grid
-conwayStep d g = foldl' (\m i -> insert i (cellStep d i g) m) empty $
-  allIndices (replicate (d-2) 1 <> [8, 8]) 6
+countActive :: State -> Int
+countActive = length . filter (== '#') . elems . grid
 
-cellStep :: Int -> Coord -> Grid -> Char
-cellStep d i m =
-  let neighbourSum = length $ filter (== '#') $ neighbours d i m
+conwayStep :: State -> State
+conwayStep (State b g) =
+  let b' = incrementBounds b
+  in State b' $ foldl' (\m i -> insert i (cellStep i g) m) empty (range b')
+
+incrementBounds :: (Coord, Coord) -> (Coord, Coord)
+incrementBounds (lowers, uppers) = (map (subtract 1) lowers, map (+1) uppers)
+
+range :: (Coord, Coord) -> [Coord]
+range = mapM I.range . uncurry zip
+
+cellStep :: Coord -> Grid -> Char
+cellStep i m =
+  let neighbourSum = length $ filter (== '#') $ neighbours i m
   in if findWithDefault '.' i m == '#'
     then if neighbourSum == 2 || neighbourSum == 3 then '#' else '.'
     else if neighbourSum == 3 then '#' else '.'
 
-neighbours :: Int -> Coord -> Grid -> [Char]
-neighbours d i m =  map ((\k -> findWithDefault '.' k m) . zipWith (+) i) (directions d)
-
-allIndices :: Coord -> Int -> [Coord]
-allIndices initialDimensions steps =
-  mapM (\d -> [(-steps) .. (d + steps - 1)]) initialDimensions
+neighbours :: Coord -> Grid -> [Char]
+neighbours i m =
+  map ((\c -> findWithDefault '.' c m) . zipWith (+) i) $ directions $ length i
 
 directions :: Int -> [Coord]
-directions d = filter (not . all (== 0)) $ replicateM d [-1, 0, 1]
+directions = filter (not . all (== 0)) . (`replicateM` [-1, 0, 1])
 
-initGrid :: Int -> String -> Grid
-initGrid d input = fromList $ do
-  (y, l) <- zip [0..] (lines input)
-  (x, c) <- zip [0..] l
-  return (replicate (d-2) 0 <> [y, x], c)
+padLeft :: Int -> a -> [a] -> [a]
+padLeft width filler es = replicate (width - length es) filler <> es
+
+readState :: Int -> String -> State
+readState d input = State bounds grid
+  where
+    ls = lines input
+    bounds = (replicate d 0, padLeft d 0 [length ls, length (head ls)])
+    grid = fromList $ do
+      (y, l) <- zip [0..] ls
+      (x, c) <- zip [0..] l
+      return (padLeft d 0 [y, x], c)
