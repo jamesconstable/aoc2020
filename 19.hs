@@ -37,23 +37,21 @@ matches ruleNumber rules = any null . dropMatches ruleNumber
 parseInput :: String -> (IntMap Rule, [String])
 parseInput input =
   let [rules, messages] = splitOn [""] $ lines input
-  in (fromList $ map parseRule rules, messages)
+  in (fromList $ parseRule <$> rules, messages)
 
 parseRule :: String -> (Int, Rule)
 parseRule s =
   let
     [n, ruleBody] = splitOn ": " s
-    ruleOptions = splitOn " | " ruleBody
-    ruleValue = if head ruleOptions !! 0 == '"'
-      then Left (head ruleOptions !! 1)
-      else Right $ map (map read . splitOn " ") ruleOptions
+    ruleValue = if head ruleBody == '"'
+      then Left $ ruleBody !! 1
+      else Right $ map read . words <$> splitOn " | " ruleBody
   in (read n, ruleValue)
 
 splitOn :: Eq a => [a] -> [a] -> [[a]]
-splitOn s = splitOn' . zipperAt 0
+splitOn s t = splitOn' (t, [])
   where
     splitOn' (t@(~(x:xs)), bs)
       | null t           = [reverse bs]
       | s `isPrefixOf` t = reverse bs : splitOn' (drop (length s) t, [])
       | otherwise        = splitOn' (xs, x:bs)
-    zipperAt i xs = (drop i xs, reverse (take i xs))
