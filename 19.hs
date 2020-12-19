@@ -1,4 +1,5 @@
 import Data.IntMap (IntMap, (!), insert, fromList)
+import Data.Function ((&))
 import Data.List (foldl', isPrefixOf)
 
 import Runner (runner)
@@ -8,7 +9,7 @@ import Runner (runner)
    Problem description: https://adventofcode.com/2020/day/19
 -}
 
-type Rule = Either Char [[Int]]
+data Rule = Terminal Char | Compound [[Int]]
 
 main :: IO ()
 main = runner solve1 solve2
@@ -22,17 +23,17 @@ solve2 :: String -> Int
 solve2 input =
   let
     (rules, messages) = parseInput input
-    rules' =
-      insert 11 (Right [[42, 31], [42, 11, 31]])
-      $ insert 8 (Right [[42], [42, 8]]) rules
+    rules' = rules
+      & insert 8 (Compound [[42], [42, 8]])
+      & insert 11 (Compound [[42, 31], [42, 11, 31]])
   in length $ filter (matches 0 rules') messages
 
 matches :: Int -> IntMap Rule -> String -> Bool
 matches ruleNumber rules = any null . dropMatches ruleNumber
   where
     dropMatches ruleNumber s = case rules ! ruleNumber of
-      Left c   -> if [c] `isPrefixOf` s then [tail s] else []
-      Right os -> concatMap (foldl' (flip (concatMap . dropMatches)) [s]) os
+      Terminal c  -> if [c] `isPrefixOf` s then [tail s] else []
+      Compound os -> concatMap (foldl' (flip (concatMap . dropMatches)) [s]) os
 
 parseInput :: String -> (IntMap Rule, [String])
 parseInput input =
@@ -44,8 +45,8 @@ parseRule s =
   let
     [n, ruleBody] = splitOn ": " s
     ruleValue = if head ruleBody == '"'
-      then Left $ ruleBody !! 1
-      else Right $ map read . words <$> splitOn " | " ruleBody
+      then Terminal $ ruleBody !! 1
+      else Compound $ map read . words <$> splitOn " | " ruleBody
   in (read n, ruleValue)
 
 splitOn :: Eq a => [a] -> [a] -> [[a]]
