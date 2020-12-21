@@ -1,5 +1,5 @@
+import Data.List ((\\), foldl', intercalate, intersect, isPrefixOf, nub)
 import Data.Map (Map, alter, elems, empty)
-import Data.List ((\\), intercalate, isPrefixOf, foldl', intersect, nub)
 import Data.Maybe (fromMaybe)
 
 import Runner (runner)
