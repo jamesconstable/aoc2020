@@ -1,6 +1,3 @@
-import Data.Char (digitToInt, intToDigit, isDigit)
-import Data.List (findIndex)
-import Data.Maybe (fromJust, listToMaybe)
 import Data.Set (Set, empty, insert, member)
 
 import Runner (runner)
@@ -16,54 +13,47 @@ main :: IO ()
 main = runner solve1 solve2
 
 solve1 :: String -> Int
-solve1 input =
-  let (winner, decks) = playCombat (readDecks input)
-  in scoreHand (decks !! winner)
+solve1 = scoreGame . playCombat . readDecks
 
 solve2 :: String -> Int
-solve2 input =
-  let (winner, decks) = playRecursiveCombat (readDecks input)
-  in scoreHand (decks !! winner)
+solve2 = scoreGame . playRecursiveCombat . readDecks
+
+scoreGame :: (Int, Decks) -> Int
+scoreGame (winner, decks) = sum $ zipWith (*) [1..] $ reverse (decks !! winner)
+
+cardsToWinner :: Int -> Decks -> Decks
+cardsToWinner winner [x:xs, y:ys] =
+  if winner == 0
+  then [xs ++ [x,y], ys]
+  else [xs, ys ++ [y,x]]
 
 playCombat :: Decks -> (Int, Decks)
-playCombat decks =
-  let decks' = head $ dropWhile (not . endGame) $ iterate playRound decks
-  in (fromJust (findIndex (not . null) decks'), decks')
-
-endGame :: Decks -> Bool
-endGame = any null
-
-scoreHand :: [Int] -> Int
-scoreHand = sum . zipWith (*) [1..] . reverse
-
-playRound :: Decks -> Decks
-playRound ds@[x:xs, y:ys]
-  | any null ds = ds
-  | x > y       = [xs <> [x, y], ys]
-  | otherwise   = [xs, ys <> [y, x]]
+playCombat decks = until (any null . snd) (playRound . snd) (-1, decks)
+  where
+    playRound :: Decks -> (Int, Decks)
+    playRound ds@[x:_, y:_] =
+      let w = if x > y then 0 else 1
+      in (w, cardsToWinner w ds)
 
 playRecursiveCombat :: Decks -> (Int, Decks)
-playRecursiveCombat decks = (winner, decks')
+playRecursiveCombat decks = playGame decks empty
   where
-    (_, winner, decks') = playGame decks empty
-
-    playGame :: Decks -> Set Decks -> (Bool, Int, Decks)
+    playGame :: Decks -> Set Decks -> (Int, Decks)
     playGame decks seen =
-      let r@(wasEarlyExit, winner, decks') = playRound decks seen
-      in if wasEarlyExit || endGame decks'
-        then r
+      let (earlyExit, winner, decks') = playRound decks seen
+      in if earlyExit || any null decks'
+        then (winner, decks')
         else playGame decks' (insert decks seen)
 
     playRound :: Decks -> Set Decks -> (Bool, Int, Decks)
     playRound ds@[x:xs, y:ys] seen
       | member ds seen = (True, 0, ds)
       | x <= length xs && y <= length ys =
-          let (r, w, [xs', ys']) = playGame [take x xs, take y ys] empty
-          in if w == 0
-            then (False, 0, [xs ++ [x,y], ys])
-            else (False, 1, [xs, ys ++ [y,x]])
-      | x > y     = (False, 0, [xs ++ [x,y], ys])
-      | otherwise = (False, 1, [xs, ys ++ [y,x]])
+          let (w, _) = playGame [take x xs, take y ys] empty
+          in (False, w, cardsToWinner w ds)
+      | otherwise =
+          let w = if x > y then 0 else 1
+          in (False, w, cardsToWinner w ds)
 
 readDecks :: String -> Decks
 readDecks input =
