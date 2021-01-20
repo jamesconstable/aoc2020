@@ -17,5 +17,5 @@ All solvers take a command line argument indicating which part to solve, and
 read their input from stdin. For example, to run part 2 of the Day 1 solver with
 the input in `input.txt`, type:
 ```
-cat input.txt | ./01 2
+./01 2 < input.txt
 ```
